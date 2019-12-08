@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Input,
   Button,
@@ -14,7 +14,8 @@ import {
   Switch,
   Link,
   Container,
-  Grid
+  Grid,
+  LinearProgress
 } from "@material-ui/core";
 import axios from "axios";
 import parser from "fast-xml-parser";
@@ -31,15 +32,26 @@ function App() {
   const [property, setProperty] = useState("");
   const [checked, setChecked] = useState(false);
   const [arv, setArv] = useState("");
-  const [purchasePrice, setPurchaseprice] = useState();
+  const [purchasePrice, setPurchaseprice] = useState("");
   const [hrc, setHrc] = useState("");
   const [mhc, setMhc] = useState("");
   const [dts, setDts] = useState("");
   const [analysis, setAnalysis] = useState();
+  const [deal, setDeal] = useState();
+  const [loading, setLoading] = useState(false);
 
   const db = firebase.firestore();
 
+  useEffect(() => {
+    setLoading(false);
+  }, [property]);
+
+  useEffect(() => {
+    setLoading(false);
+  }, [deal]);
+
   async function handleSubmit(e) {
+    setLoading(true);
     e.preventDefault();
     await axios
       .get(
@@ -118,7 +130,8 @@ function App() {
         mhc,
         dts,
         profit: analysis.profit,
-        profitMargin: analysis.profitMargin
+        profitMargin: analysis.profitMargin,
+        date: new Date()
       })
       .then(res => {
         alert("Your deal was saved!");
@@ -133,7 +146,28 @@ function App() {
   //   <RouterLink innerRef={ref} to="/deals" {...props} />
   // ));
 
-  function showLastDeal() {}
+  async function showLastDeal() {
+    setLoading(true);
+    await db
+      .collection("deals")
+      .orderBy("date", "desc")
+      .limit(1)
+      .get()
+      .then(querySnapshot => {
+        querySnapshot.forEach(doc => {
+          setDeal({ id: doc.id, deal: doc.data() });
+        });
+      });
+  }
+
+  const clearForm = () => {
+    setChecked(false);
+    setArv("");
+    setPurchaseprice("");
+    setHrc("");
+    setMhc("");
+    setDts("");
+  };
 
   return (
     <>
@@ -221,6 +255,8 @@ function App() {
               </Table>
             </Paper>
           </>
+        ) : loading ? (
+          <LinearProgress color="secondary" />
         ) : null}
         <br></br>
         <br></br>
@@ -320,6 +356,14 @@ function App() {
                     <Button type="submit" color="primary" variant="contained">
                       Analyze Deal
                     </Button>
+                    &nbsp;
+                    <Button
+                      onClick={clearForm}
+                      color="secondary"
+                      variant="contained"
+                    >
+                      Reset
+                    </Button>
                   </form>
                 </div>
                 <br></br>
@@ -370,6 +414,57 @@ function App() {
                       Show Last Deal
                     </Button>
                   </div>
+                ) : null}
+              </Container>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} style={deal ? {} : { display: "none" }}>
+            <Paper elevation={12}>
+              <Container>
+                {deal ? (
+                  <div style={{ paddingTop: "25px", paddingBottom: "25px" }}>
+                    <Title>Last Saved Deal</Title>
+                    <br />
+                    <br />
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>
+                            <strong>Address</strong>
+                          </TableCell>
+                          <TableCell align="center">
+                            <strong>Total Profit</strong>
+                          </TableCell>
+                          <TableCell align="center">
+                            <strong>Profit Margin</strong>
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell>{deal.deal.property.street}</TableCell>
+                          <TableCell align="center">
+                            <NumberFormat
+                              value={deal.deal.profit}
+                              displayType={"text"}
+                              thousandSeparator={true}
+                              prefix={"$ "}
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <NumberFormat
+                              value={deal.deal.profitMargin}
+                              displayType={"text"}
+                              decimalScale={2}
+                              suffix={"%"}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : loading ? (
+                  <LinearProgress color="secondary" />
                 ) : null}
               </Container>
             </Paper>
