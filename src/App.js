@@ -55,7 +55,7 @@ function App() {
     e.preventDefault();
     await axios
       .get(
-        "https://cors-anywhere.herokuapp.com/http://www.zillow.com/webservice/GetSearchResults.htm?zws-id=X1-ZWz17jk360l1xn_61q4u",
+        `https://cors-anywhere.herokuapp.com/http://www.zillow.com/webservice/GetSearchResults.htm?zws-id=${process.env.REACT_APP_ZILLOW_API_KEY}`,
         {
           params: {
             address: address[0].long_name + " " + address[1].long_name,
@@ -174,7 +174,7 @@ function App() {
       <Container style={{ marginTop: "25px", marginBottom: "100px" }}>
         <div>
           <Script
-            url="https://maps.googleapis.com/maps/api/js?key=AIzaSyBx4UIxFo8kfOIJhml5HNeS4QKVbkM6jjM&libraries=places"
+            url={`https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_PLACES_API_KEY}&libraries=places`}
             onLoad={handleScriptLoad}
           />
           <div>
